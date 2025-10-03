@@ -9,9 +9,15 @@ namespace Catalog.API.Products.CreateProduct
 
     public record CreateProductResult(Guid Id);
 
-    internal class CreateProductCommandHandler : ICommandHandler<CreateProductCommand, CreateProductResult>
+    internal class CreateProductCommandHandler 
+        (IDocumentStore store) 
+        : ICommandHandler<CreateProductCommand, CreateProductResult>
     {
-        public async Task<CreateProductResult> Handle(CreateProductCommand command, CancellationToken cancellationToken)
+        public async Task<CreateProductResult> Handle
+            (
+                CreateProductCommand command, 
+                CancellationToken cancellationToken
+            )
         {
             // Step1. Create Product Entity from Command Object
             Product product = new Product 
@@ -23,10 +29,10 @@ namespace Catalog.API.Products.CreateProduct
                 Price = command.Price,
             };
 
-            // TODO
-            // Step2. Save to DB
-            // It will return as back and id and we will pass that id to the response
-            product.Id = Guid.NewGuid();
+            // Step2. Save to DB using a session
+            using var session = store.LightweightSession();
+            session.Store(product);
+            await session.SaveChangesAsync(cancellationToken);
 
             // Step3. Return CreateProductResult
             return new CreateProductResult(product.Id);

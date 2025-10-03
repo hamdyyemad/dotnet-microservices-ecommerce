@@ -7,18 +7,14 @@
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-
             app.MapPost("/products", async (CreateProductRequest productRequest, ISender sender) =>
             {
                 var command = productRequest.Adapt<CreateProductCommand>();
-
                 var result = await sender.Send(command);
-
-                var response = result.Adapt<CreateProductResult>();
-
+                var response = new CreateProductResponse(result.Id);
                 return Results.Created($"/products/{response.Id}", response);
             })
-            .WithName("CraeteProduct")
+            .WithName("CreateProduct")
             .Produces<CreateProductResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .WithSummary("Create Product")

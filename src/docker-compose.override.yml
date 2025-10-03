@@ -1,0 +1,22 @@
+services:
+  catalogdb:
+    image: postgres
+    container_name: catalogdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: AdminAdmin
+      POSTGRES_DB: CatalogDb
+    ports:
+      - "5432:5432"
+
+  catalog.api:
+    build:
+      context: .
+      dockerfile: Services/Catalog/Catalog.API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=catalogdb;Port=5432;Database=CatalogDb;Username=postgres;Password=AdminAdmin
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - catalogdb
+    ports:
+      - "5050:8080"

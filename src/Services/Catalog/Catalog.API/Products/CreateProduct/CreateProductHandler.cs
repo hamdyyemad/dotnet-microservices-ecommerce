@@ -10,7 +10,7 @@ namespace Catalog.API.Products.CreateProduct
     public record CreateProductResult(Guid Id);
 
     internal class CreateProductCommandHandler 
-        (IDocumentStore store) 
+        (IDocumentSession session) 
         : ICommandHandler<CreateProductCommand, CreateProductResult>
     {
         public async Task<CreateProductResult> Handle
@@ -30,7 +30,6 @@ namespace Catalog.API.Products.CreateProduct
             };
 
             // Step2. Save to DB using a session
-            using var session = store.LightweightSession();
             session.Store(product);
             await session.SaveChangesAsync(cancellationToken);
 

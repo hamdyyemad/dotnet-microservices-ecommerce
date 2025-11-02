@@ -5,7 +5,7 @@ using Catalog.API.Products.GetProducts;
 namespace Catalog.API.Products.GetProductById
 {
     //public record GetProductByIdRequest();
-    public record GetProductByIdResponse(Product product);
+    internal record GetProductByIdResponse(Product product);
     public class GetProductByIdEndpoint : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)

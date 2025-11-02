@@ -7,5 +7,11 @@ public class ExceptionFactory : IExceptionFactory
         var message = ExceptionMessages.Product.NotFound(productId);
         return new ProductNotFoundException(message);
     }
+
+    public ProductNotFoundException CreateProductNotFoundException(string identifier)
+    {
+        var message = ExceptionMessages.Product.NotFound(identifier);
+        return new ProductNotFoundException(message);
+    }
 }
 

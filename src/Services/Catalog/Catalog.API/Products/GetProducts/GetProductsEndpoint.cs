@@ -3,7 +3,7 @@
 namespace Catalog.API.Products.GetProducts
 {
     //public record GetProductsRequest()
-    public record GetProductsResponse(IEnumerable<Product> Products);
+    internal record GetProductsResponse(IEnumerable<Product> Products);
     public class GetProductsEndpoint : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)

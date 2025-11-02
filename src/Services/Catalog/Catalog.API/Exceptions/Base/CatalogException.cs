@@ -1,4 +1,4 @@
-﻿namespace Catalog.API.Exceptions;
+namespace Catalog.API.Exceptions;
 
 public abstract class CatalogException : Exception
 {
@@ -11,3 +11,4 @@ public abstract class CatalogException : Exception
     {
     }
 }
+

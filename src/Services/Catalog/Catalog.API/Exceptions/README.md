@@ -27,6 +27,7 @@ graph TB
     subgraph "Exception Factory Pattern"
         IF[IExceptionFactory<br/>Interface]
         EF[ExceptionFactory<br/>Implementation]
+        EM[ExceptionMessages<br/>Unified Messages]
     end
 
     subgraph "Exception Hierarchy"
@@ -42,6 +43,8 @@ graph TB
     EP -->|Sends Query| H
     H -->|Injected via DI| IF
     IF -.->|Implemented by| EF
+    EF -->|Uses| EM
+    EM -->|Generates| PNF
     EF -->|Creates| PNF
     DI -->|Registers| EF
     H -->|Throws| PNF
@@ -54,6 +57,7 @@ graph TB
     style PNF fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
     style EF fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style IF fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style EM fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
 ```
 
 ### Sequence Diagram - Exception Flow
@@ -74,7 +78,9 @@ sequenceDiagram
     Handler->>Handler: Query Database (Product = null)
 
     alt Product Not Found
-        Handler->>Factory: CreateProductNotFoundException(message)
+        Handler->>Factory: CreateProductNotFoundException(productId)
+        Factory->>ExceptionMessages: NotFound(productId)
+        ExceptionMessages-->>Factory: "Product with ID '...' was not found."
         Factory->>Exception: new ProductNotFoundException(message)
         Exception-->>Factory: Exception Instance
         Factory-->>Handler: ProductNotFoundException
@@ -102,7 +108,8 @@ flowchart TD
     Check -->|Valid| Success[Return Success Result]
     Check -->|Invalid| UseFactory[Use ExceptionFactory]
 
-    UseFactory --> Create[Create Specific Exception<br/>ProductNotFoundException]
+    UseFactory --> GetMessage[Get Unified Message<br/>from ExceptionMessages]
+    GetMessage --> Create[Create Specific Exception<br/>ProductNotFoundException]
     Create --> Throw[Throw Exception]
     Throw --> Bubble[Exception Bubbles Up]
 
@@ -129,7 +136,9 @@ graph LR
     subgraph "Factory Pattern"
         IF[IExceptionFactory]
         EF[ExceptionFactory]
+        EM[ExceptionMessages]
         IF -.->|implements| EF
+        EF -->|uses| EM
     end
 
     subgraph "Exception Classes"
@@ -153,21 +162,50 @@ graph LR
 
     style CE fill:#e1f5ff,stroke:#01579b,stroke-width:2px
     style IF fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style EM fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
 ```
 
 ### Key Points from Diagrams
 
 1. **Dependency Injection**: `ExceptionFactory` is registered in `Program.cs` and injected into handlers
 2. **Factory Pattern**: Handlers use `IExceptionFactory` interface, not concrete exception classes
-3. **Exception Hierarchy**: All catalog exceptions inherit from `CatalogException`, which inherits from `Exception`
-4. **Exception Handling**: Global handlers catch `CatalogException` for business errors (400) vs `Exception` for system errors (500)
-5. **Flow**: Request → Handler → Factory → Exception → Global Handler → HTTP Response
+3. **Unified Messages**: `ExceptionMessages` class centralizes all exception message templates for consistency
+4. **Context-Based Creation**: Factory methods accept context (e.g., product ID) instead of raw messages
+5. **Exception Hierarchy**: All catalog exceptions inherit from `CatalogException`, which inherits from `Exception`
+6. **Exception Handling**: Global handlers catch `CatalogException` for business errors (400) vs `Exception` for system errors (500)
+7. **Flow**: Request → Handler → Factory → ExceptionMessages → Exception → Global Handler → HTTP Response
+
+## Folder Structure
+
+The Exceptions folder is organized into logical subfolders for better maintainability:
+
+```
+Exceptions/
+├── Base/
+│   └── CatalogException.cs          # Abstract base exception class
+├── Types/
+│   └── ProductNotFoundException.cs   # Specific exception types
+├── Messages/
+│   └── ExceptionMessages.cs         # Unified exception messages
+├── Factory/
+│   ├── IExceptionFactory.cs         # Factory interface
+│   └── ExceptionFactory.cs          # Factory implementation
+└── README.md                         # Documentation
+```
+
+### Folder Organization
+
+- **`Base/`**: Contains the abstract base exception class (`CatalogException`)
+- **`Types/`**: Contains specific exception types (e.g., `ProductNotFoundException`)
+- **`Messages/`**: Contains centralized exception message templates
+- **`Factory/`**: Contains the factory interface and implementation
 
 ## Structure
 
-### `CatalogException.cs`
+### `Base/CatalogException.cs`
 
 - **Abstract base class** for all catalog-related exceptions
+- Located in `Base/` folder for base exception types
 - Inherits from `Exception`
 - Provides constructors for message-only and message with inner exception scenarios
 - Cannot be instantiated directly - must be inherited by specific exception types
@@ -226,18 +264,25 @@ classDiagram
         +ProductNotFoundException(string message, Exception innerException)
     }
 
+    class ExceptionMessages {
+        <<static>>
+        +Product NotFound(Guid productId) string
+        +Product NotFound(string identifier) string
+    }
+
     class IExceptionFactory {
         <<interface>>
-        +ProductNotFoundException CreateProductNotFoundException(string message)
+        +ProductNotFoundException CreateProductNotFoundException(Guid productId)
     }
 
     class ExceptionFactory {
-        +ProductNotFoundException CreateProductNotFoundException(string message)
+        +ProductNotFoundException CreateProductNotFoundException(Guid productId)
     }
 
     Exception <|-- CatalogException : inherits
     CatalogException <|-- ProductNotFoundException : inherits
     IExceptionFactory <|.. ExceptionFactory : implements
+    ExceptionFactory ..> ExceptionMessages : uses
     ExceptionFactory ..> ProductNotFoundException : creates
 ```
 
@@ -246,6 +291,7 @@ classDiagram
 - **Exception**: Base .NET Framework class (shown for context)
 - **CatalogException**: Abstract base class for all catalog domain exceptions (cannot be instantiated)
 - **ProductNotFoundException**: Concrete exception class for product not found scenarios
+- **ExceptionMessages**: Static class containing centralized, unified exception message templates
 - **IExceptionFactory**: Interface defining the contract for exception creation
 - **ExceptionFactory**: Concrete implementation that creates exception instances
 
@@ -253,25 +299,40 @@ The diagram shows:
 
 - **Inheritance**: `Exception` → `CatalogException` → `ProductNotFoundException`
 - **Implementation**: `ExceptionFactory` implements `IExceptionFactory`
-- **Dependency**: `ExceptionFactory` creates instances of `ProductNotFoundException`
+- **Message Generation**: `ExceptionFactory` uses `ExceptionMessages` to build unified messages
+- **Dependency**: `ExceptionFactory` creates instances of `ProductNotFoundException` with unified messages
 
-### `ProductNotFoundException.cs`
+### `Types/ProductNotFoundException.cs`
 
 - **Specific exception** for when a product cannot be found
+- Located in `Types/` folder for concrete exception types
 - Inherits from `CatalogException`
 - Used when querying for a product that doesn't exist in the database
 
-### `IExceptionFactory.cs`
+### `Messages/ExceptionMessages.cs`
+
+- **Centralized message definitions** for all catalog exceptions
+- Located in `Messages/` folder for exception message templates
+- Ensures consistent and unified error messages across the application
+- Contains static methods that generate messages from context (e.g., product ID)
+- Messages are defined once and reused throughout the application
+- Example: `ExceptionMessages.Product.NotFound(productId)` → `"Product with ID '{productId}' was not found."`
+
+### `Factory/IExceptionFactory.cs`
 
 - **Interface** defining the contract for exception creation
+- Located in `Factory/` folder for factory-related interfaces
 - Contains factory methods for creating different exception types
+- Methods accept context (e.g., IDs) rather than raw messages for unification
 - Currently includes:
-  - `CreateProductNotFoundException(string message)`
+  - `CreateProductNotFoundException(Guid productId)`
 
-### `ExceptionFactory.cs`
+### `Factory/ExceptionFactory.cs`
 
 - **Concrete implementation** of `IExceptionFactory`
+- Located in `Factory/` folder for factory implementations
 - Implements all factory methods to create appropriate exception instances
+- **Builds unified messages** using `ExceptionMessages` class before creating exceptions
 - Registered as a scoped service in dependency injection container
 
 ## Usage
@@ -281,14 +342,25 @@ The diagram shows:
 Instead of:
 
 ```csharp
+// ❌ Bad: Inconsistent messages, no centralization
 throw new ProductNotFoundException("Product doesn't exist.");
+throw new ProductNotFoundException("Product not found.");
+throw new ProductNotFoundException("Could not find product.");
 ```
 
 Use:
 
 ```csharp
-throw exceptionFactory.CreateProductNotFoundException("Product doesn't exist.");
+// ✅ Good: Unified message, passes context (product ID)
+throw exceptionFactory.CreateProductNotFoundException(productId);
 ```
+
+**Benefits of this approach:**
+
+- **Unified Messages**: All `ProductNotFoundException` instances use the same message format
+- **Context-Aware**: Messages include relevant context (e.g., product ID) automatically
+- **Maintainable**: Change message format in one place (`ExceptionMessages.cs`)
+- **Consistent**: No more variation in exception messages across developers
 
 ### Dependency Injection
 
@@ -315,38 +387,55 @@ internal class GetProductByIdHandlerQuery(
 1. **Decoupling**: Handlers don't need to know about specific exception types
 2. **Testability**: Easy to mock `IExceptionFactory` in unit tests
 3. **Centralized Logic**: Exception creation logic is in one place
-4. **Extensibility**: Easy to add new exception types by extending the factory
-5. **Type Safety**: Factory methods ensure correct exception types are used
+4. **Unified Messages**: All exception messages are centralized and consistent across the application
+5. **Context-Aware**: Messages automatically include relevant context (e.g., IDs, identifiers)
+6. **Maintainability**: Change exception message formats in one place (`ExceptionMessages.cs`)
+7. **Extensibility**: Easy to add new exception types by extending the factory
+8. **Type Safety**: Factory methods ensure correct exception types are used
 
 ## Adding New Exceptions
 
 To add a new exception type:
 
-1. Create a new exception class inheriting from `CatalogException`:
+1. Create a new exception class inheriting from `CatalogException` in the `Types/` folder:
 
    ```csharp
+   // File: Types/ProductAlreadyExistsException.cs
+   namespace Catalog.API.Exceptions;
+
    public class ProductAlreadyExistsException : CatalogException
    {
        public ProductAlreadyExistsException(string message) : base(message) { }
    }
    ```
 
-2. Add a factory method to `IExceptionFactory`:
+2. Add a unified message method to `Messages/ExceptionMessages.cs`:
 
    ```csharp
-   ProductAlreadyExistsException CreateProductAlreadyExistsException(string message);
+   public static class Product
+   {
+       public static string AlreadyExists(string productName)
+           => $"Product with name '{productName}' already exists.";
+   }
    ```
 
-3. Implement the method in `ExceptionFactory`:
+3. Add a factory method to `Factory/IExceptionFactory.cs`:
 
    ```csharp
-   public ProductAlreadyExistsException CreateProductAlreadyExistsException(string message)
+   ProductAlreadyExistsException CreateProductAlreadyExistsException(string productName);
+   ```
+
+4. Implement the method in `Factory/ExceptionFactory.cs`:
+
+   ```csharp
+   public ProductAlreadyExistsException CreateProductAlreadyExistsException(string productName)
    {
+       var message = ExceptionMessages.Product.AlreadyExists(productName);
        return new ProductAlreadyExistsException(message);
    }
    ```
 
-4. Use it in your handlers:
+5. Use it in your handlers:
    ```csharp
-   throw exceptionFactory.CreateProductAlreadyExistsException("Product already exists.");
+   throw exceptionFactory.CreateProductAlreadyExistsException(product.Name);
    ```

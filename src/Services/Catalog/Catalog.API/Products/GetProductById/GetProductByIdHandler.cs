@@ -1,5 +1,6 @@
 ﻿using BuildingBlocks.CQRS;
 using Catalog.API.Exceptions;
+using Catalog.API.Extensions;
 using Catalog.API.Models;
 using Catalog.API.Products.GetProducts;
 
@@ -13,10 +14,7 @@ namespace Catalog.API.Products.GetProductById
     {
         public async Task<GetProductByIdResult> Handle(GetProductByIdQuery query, CancellationToken cancellationToken)
         {
-            var product = await session.LoadAsync<Product>(query.id, cancellationToken);
-            if(product is null) {
-                throw exceptionFactory.CreateProductNotFoundException(query.id);
-            }
+            var product = await session.GetProductByIdOrThrowAsync(query.id, exceptionFactory, cancellationToken);
             return new GetProductByIdResult(product);
         }
     }

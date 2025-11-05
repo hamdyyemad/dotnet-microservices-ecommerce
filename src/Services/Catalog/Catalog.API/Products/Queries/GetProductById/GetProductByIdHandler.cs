@@ -2,9 +2,9 @@
 using Catalog.API.Exceptions;
 using Catalog.API.Extensions;
 using Catalog.API.Models;
-using Catalog.API.Products.GetProducts;
 
-namespace Catalog.API.Products.GetProductById
+
+namespace Catalog.API.Products.Queries.GetProductById
 {
     public record GetProductByIdQuery(Guid id) : IQuery<GetProductByIdResult>;
     public record GetProductByIdResult(Product product);

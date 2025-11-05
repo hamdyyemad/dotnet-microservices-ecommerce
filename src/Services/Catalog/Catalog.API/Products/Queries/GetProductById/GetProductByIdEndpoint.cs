@@ -1,8 +1,6 @@
-﻿
-using Catalog.API.Models;
-using Catalog.API.Products.GetProducts;
+﻿using Catalog.API.Models;
 
-namespace Catalog.API.Products.GetProductById
+namespace Catalog.API.Products.Queries.GetProductById
 {
     //public record GetProductByIdRequest();
     internal record GetProductByIdResponse(Product product);

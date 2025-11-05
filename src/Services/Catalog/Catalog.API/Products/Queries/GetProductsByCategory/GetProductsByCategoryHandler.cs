@@ -2,7 +2,7 @@
 using Catalog.API.Exceptions;
 using Catalog.API.Models;
 
-namespace Catalog.API.Products.GetProductByCategory
+namespace Catalog.API.Products.Queries.GetProductsByCategory
 {
     public record GetProductByCategoryQuery(string category) : IQuery<GetProductByCategoryResult>;
     public record GetProductByCategoryResult(IEnumerable<Product> Products);

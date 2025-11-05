@@ -2,9 +2,8 @@
 using Catalog.API.Exceptions;
 using Catalog.API.Extensions;
 using Catalog.API.Models;
-using Marten;
 
-namespace Catalog.API.Products.UpdateProduct
+namespace Catalog.API.Products.Commands.UpdateProduct
 {
     public record UpdateProductCommand(Product Product) : ICommand<UpdateProductResult>;
     public record UpdateProductResult(bool IsSucess);

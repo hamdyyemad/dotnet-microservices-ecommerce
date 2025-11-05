@@ -1,6 +1,6 @@
 ﻿using Catalog.API.Models;
 
-namespace Catalog.API.Products.UpdateProduct
+namespace Catalog.API.Products.Commands.UpdateProduct
 {
     internal record UpdateProductResponse(bool IsSucess);
     public class UpdateProductEndpoint : ICarterModule

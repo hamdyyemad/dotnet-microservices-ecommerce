@@ -1,6 +1,6 @@
 ﻿using Catalog.API.Models;
 
-namespace Catalog.API.Products.GetProducts
+namespace Catalog.API.Products.Queries.GetProducts
 {
     //public record GetProductsRequest()
     internal record GetProductsResponse(IEnumerable<Product> Products);

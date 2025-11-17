@@ -1,0 +1,63 @@
+using Catalog.API.Exceptions;
+
+namespace Catalog.API.Middleware;
+
+public class GlobalExceptionHandlerMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger;
+    private readonly IWebHostEnvironment _environment;
+
+    public GlobalExceptionHandlerMiddleware(
+        RequestDelegate next,
+        ILogger<GlobalExceptionHandlerMiddleware> logger,
+        IWebHostEnvironment environment)
+    {
+        _next = next;
+        _logger = logger;
+        _environment = environment;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+
+        var problemDetails = exception switch
+        {
+            CatalogException catalogException => new
+            {
+                status = catalogException.StatusCode,
+                title = catalogException.Title,
+                details = catalogException.Message,
+                type = catalogException.GetType().Name
+            },
+            _ => new
+            {
+                status = StatusCodes.Status500InternalServerError,
+                title = "Internal Server Error",
+                details = _environment.IsDevelopment() 
+                    ? exception.Message 
+                    : "An error occurred while processing your request.",
+                type = exception.GetType().Name
+            }
+        };
+
+        context.Response.StatusCode = problemDetails.status;
+
+        await context.Response.WriteAsJsonAsync(problemDetails);
+    }
+}
+

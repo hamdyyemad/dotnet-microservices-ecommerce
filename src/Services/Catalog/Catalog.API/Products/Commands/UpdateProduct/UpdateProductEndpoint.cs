@@ -1,4 +1,5 @@
 ﻿using Catalog.API.Models;
+using Catalog.API.Products.Observers;
 
 namespace Catalog.API.Products.Commands.UpdateProduct
 {
@@ -9,9 +10,9 @@ namespace Catalog.API.Products.Commands.UpdateProduct
         {
             app.MapPut("/products", async (Product product, ISender sender) =>
             {
-                var command = new UpdateProductCommand(product);
+                var command = new UpdateProductObserverCommand(product);
                 var result = await sender.Send(command);
-                var response = new UpdateProductResponse(result.IsSucess);
+                var response = new UpdateProductResponse(result);
                 return Results.Ok(response);
             })
             .WithName("UpdateProduct")

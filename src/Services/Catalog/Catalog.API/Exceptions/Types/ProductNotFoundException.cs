@@ -2,12 +2,12 @@ namespace Catalog.API.Exceptions;
 
 public class ProductNotFoundException : CatalogException
 {
-    public ProductNotFoundException(string message) : base(message)
+    public ProductNotFoundException(ExceptionInfo info) : base(info)
     {
     }
 
-    public ProductNotFoundException(string message, Exception innerException) 
-        : base(message, innerException)
+    public ProductNotFoundException(ExceptionInfo info, Exception innerException) 
+        : base(info, innerException)
     {
     }
 }

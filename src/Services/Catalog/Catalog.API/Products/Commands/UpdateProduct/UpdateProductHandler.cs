@@ -5,25 +5,21 @@ using Catalog.API.Models;
 
 namespace Catalog.API.Products.Commands.UpdateProduct
 {
-    public record UpdateProductCommand(Product Product) : ICommand<UpdateProductResult>;
-    public record UpdateProductResult(bool IsSucess);
+    public record UpdateProductCommand(Product Product) : ICommand<bool>;
     
     public class UpdateProductCommandHandler(
-        IQuerySession querySession,
-        IDocumentSession documentSession,
-        IExceptionFactory exceptionFactory)
-        : ICommandHandler<UpdateProductCommand, UpdateProductResult>
+        IDocumentSession documentSession)
+        : ICommandHandler<UpdateProductCommand, bool>
     {
-        public async Task<UpdateProductResult> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
         {
-            // Validate product exists
-            await querySession.GetProductByIdOrThrowAsync(request.Product.Id, exceptionFactory, cancellationToken);
+            // Validation of Product Existence happens in the UpdateProductObserver 
             
             // Update product
             documentSession.Update(request.Product);
             await documentSession.SaveChangesAsync(cancellationToken);
             
-            return new UpdateProductResult(true);
+            return true;
         }
     }
 }

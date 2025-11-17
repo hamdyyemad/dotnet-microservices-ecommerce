@@ -1,14 +1,25 @@
 namespace Catalog.API.Exceptions;
 
-public abstract class CatalogException : Exception
+/// <summary>
+/// Base exception class for all catalog-related exceptions.
+/// Contains HTTP response information (status code and title) along with the error message.
+/// </summary>
+public class CatalogException : Exception
 {
-    protected CatalogException(string message) : base(message)
+    public int StatusCode { get; }
+    public string Title { get; }
+
+    public CatalogException(ExceptionInfo info) : base(info.Message)
     {
+        StatusCode = info.StatusCode;
+        Title = info.Title;
     }
 
-    protected CatalogException(string message, Exception innerException) 
-        : base(message, innerException)
+    public CatalogException(ExceptionInfo info, Exception innerException) 
+        : base(info.Message, innerException)
     {
+        StatusCode = info.StatusCode;
+        Title = info.Title;
     }
 }
 

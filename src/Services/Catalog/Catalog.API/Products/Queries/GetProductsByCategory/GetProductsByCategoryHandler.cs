@@ -1,5 +1,4 @@
 ﻿using BuildingBlocks.CQRS;
-using Catalog.API.Exceptions;
 using Catalog.API.Models;
 
 namespace Catalog.API.Products.Queries.GetProductsByCategory

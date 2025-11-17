@@ -1,6 +1,4 @@
 ﻿using BuildingBlocks.CQRS;
-using Catalog.API.Exceptions;
-using Catalog.API.Extensions;
 using Catalog.API.Models;
 
 namespace Catalog.API.Products.Commands.UpdateProduct

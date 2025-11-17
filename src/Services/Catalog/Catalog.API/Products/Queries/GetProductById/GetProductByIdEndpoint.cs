@@ -1,14 +1,15 @@
 ﻿using Catalog.API.Models;
+using Catalog.API.Routes;
 
 namespace Catalog.API.Products.Queries.GetProductById
 {
     //public record GetProductByIdRequest();
     internal record GetProductByIdResponse(Product product);
-    public class GetProductByIdEndpoint : ICarterModule
+    public class GetProductByIdEndpoint : IEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public void AddRoutes(IEndpointRouteBuilder app, string routePath)
         {
-            app.MapGet("/products/{id}", async (Guid id, ISender sender) =>
+            app.MapGet(routePath, async (Guid id, ISender sender) =>
             {
                 var result = await sender.Send(new GetProductByIdQuery(id));
                 var response = new GetProductByIdResponse(result.product);

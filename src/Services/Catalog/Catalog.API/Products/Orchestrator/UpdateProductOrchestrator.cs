@@ -4,13 +4,13 @@ using Catalog.API.Models;
 using Catalog.API.Products.Commands.UpdateProduct;
 using Catalog.API.Products.Queries.GetProductById;
 
-namespace Catalog.API.Products.Observers
+namespace Catalog.API.Products.Orchestrator
 {
-    public record UpdateProductObserverCommand(Product Product) : ICommand<bool>;
-    public class UpdateProductObserver(ISender sender)
-        : ICommandHandler<UpdateProductObserverCommand, bool>
+    public record UpdateProductOrchestratorCommand(Product Product) : ICommand<bool>;
+    public class UpdateProductOrchestrator(ISender sender)
+        : ICommandHandler<UpdateProductOrchestratorCommand, bool>
     {
-        public async Task<bool> Handle(UpdateProductObserverCommand request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(UpdateProductOrchestratorCommand request, CancellationToken cancellationToken)
         {
             var incomingProductId = request.Product.Id;
 

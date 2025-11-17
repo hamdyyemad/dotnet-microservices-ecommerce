@@ -3,6 +3,9 @@ using Catalog.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register Carter for route discovery
+// Note: If using centralized CatalogRoutes, consider disabling auto-discovery
+// by removing ICarterModule from individual endpoint classes to avoid duplicate routes
 builder.Services.AddCarter();
 builder.Services.AddMediatR(config =>
 {

@@ -1,16 +1,17 @@
 ﻿using Catalog.API.Models;
-using Catalog.API.Products.Observers;
+using Catalog.API.Products.Orchestrator;
+using Catalog.API.Routes;
 
 namespace Catalog.API.Products.Commands.UpdateProduct
 {
     internal record UpdateProductResponse(bool IsSucess);
-    public class UpdateProductEndpoint : ICarterModule
+    public class UpdateProductEndpoint : IEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public void AddRoutes(IEndpointRouteBuilder app, string routePath)
         {
-            app.MapPut("/products", async (Product product, ISender sender) =>
+            app.MapPut(routePath, async (Product product, ISender sender) =>
             {
-                var command = new UpdateProductObserverCommand(product);
+                var command = new UpdateProductOrchestratorCommand(product);
                 var result = await sender.Send(command);
                 var response = new UpdateProductResponse(result);
                 return Results.Ok(response);

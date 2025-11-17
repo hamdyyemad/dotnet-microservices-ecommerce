@@ -62,17 +62,19 @@ public class CatalogRoutes : ICarterModule
     /// </summary>
     private static void RegisterV1(IEndpointRouteBuilder app)
     {
-        var v1Group = app.MapGroup("/api/v1")
-            .WithTags("Catalog API V1")
-            .WithSummary("Catalog API - Version 1");
+        const string version = "v1";
+
+        var v1Group = app.MapGroup($"/api/{version}")
+            .WithTags($"Catalog API {version}")
+            .WithSummary($"Catalog API - Version {version}");
 
         // Simple health check endpoint (no dependencies)
         v1Group.MapGet("health", () => Results.Ok(new { status = "healthy", message = "API is running" }))
             .WithName("HealthCheck")
             .WithSummary("Health check endpoint");
 
-        RegisterProductQueries(v1Group, "v1");
-        RegisterProductCommands(v1Group, "v1");
+        RegisterProductQueries(v1Group, version);
+        RegisterProductCommands(v1Group, version);
     }
 
     /// <summary>

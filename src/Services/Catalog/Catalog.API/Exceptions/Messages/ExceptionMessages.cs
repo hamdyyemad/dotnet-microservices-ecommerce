@@ -1,3 +1,6 @@
+using BuildingBlocks.Exceptions;
+using Microsoft.AspNetCore.Http;
+
 namespace Catalog.API.Exceptions;
 
 /// <summary>

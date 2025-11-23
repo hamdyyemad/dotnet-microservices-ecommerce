@@ -6,6 +6,8 @@ This folder contains the exception handling implementation using the Factory Des
 
 Instead of directly instantiating exceptions throughout the codebase, we use an exception factory pattern that provides a centralized way to create exceptions. This approach offers better testability, maintainability, and separation of concerns.
 
+**Note**: Common exception infrastructure (`BaseException` and `ExceptionInfo`) is located in the `BuildingBlocks` project and shared across all microservices. This folder contains only Catalog API domain-specific exceptions.
+
 ## Visual Diagram Overview
 
 ### Architecture Overview
@@ -28,17 +30,18 @@ graph TB
         IF[IExceptionFactory<br/>Interface]
         EF[ExceptionFactory<br/>Implementation]
         EM[ExceptionMessages<br/>Returns ExceptionInfo]
-        EI[ExceptionInfo<br/>Record]
+        EI[ExceptionInfo<br/>Record<br/>BuildingBlocks]
     end
 
     subgraph "Exception Hierarchy"
         EX[Exception<br/>.NET Framework]
-        CE[CatalogException<br/>Base Class]
+        BE[BaseException<br/>BuildingBlocks]
+        CE[CatalogException<br/>Domain Base Class]
         PNF[ProductNotFoundException<br/>Concrete Exception]
     end
 
     subgraph "Exception Handler"
-        EH[Global Exception Handler<br/>catch CatalogException]
+        EH[Global Exception Handler<br/>catch BaseException]
     end
 
     EP -->|Sends Query| H
@@ -52,7 +55,8 @@ graph TB
     H -->|Throws| PNF
     PNF -->|Caught by| EH
 
-    EX -->|Inherits| CE
+    EX -->|Inherits| BE
+    BE -->|Inherits| CE
     CE -->|Inherits| PNF
 
     style CE fill:#e1f5ff,stroke:#01579b,stroke-width:2px
@@ -89,7 +93,7 @@ sequenceDiagram
         Handler->>Exception: throw
         Exception->>GlobalHandler: Exception Bubbles Up
 
-        GlobalHandler->>GlobalHandler: catch (CatalogException)
+        GlobalHandler->>GlobalHandler: catch (BaseException)
         GlobalHandler->>Response: Uses exception.StatusCode and exception.Title
         Response-->>Client: 404 Not Found + Error Message
     else Product Found
@@ -117,7 +121,7 @@ flowchart TD
 
     Bubble --> Catch{Catch Block Type}
 
-    Catch -->|catch CatalogException| BusinessHandler[Business Exception Handler<br/>Uses exception.StatusCode & Title]
+    Catch -->|catch BaseException| BusinessHandler[Business Exception Handler<br/>Uses exception.StatusCode & Title]
     Catch -->|catch Exception| SystemHandler[System Exception Handler<br/>Returns 500 Internal Server Error]
     Catch -->|No Catch| FrameworkHandler[Framework Default Handler<br/>Returns 500]
 
@@ -146,10 +150,12 @@ graph LR
     end
 
     subgraph "Exception Classes"
-        EX[Exception]
-        CE[CatalogException<br/>Base Class]
+        EX[Exception<br/>.NET Framework]
+        BE[BaseException<br/>BuildingBlocks]
+        CE[CatalogException<br/>Domain Base]
         PNF[ProductNotFoundException]
-        EX -->|inherits| CE
+        EX -->|inherits| BE
+        BE -->|inherits| CE
         CE -->|inherits| PNF
     end
 
@@ -175,10 +181,11 @@ graph LR
 2. **Factory Pattern**: Handlers use `IExceptionFactory` interface, not concrete exception classes
 3. **Unified Exception Data**: `ExceptionMessages` class centralizes all exception information (message, status code, title) for consistency
 4. **Context-Based Creation**: Factory methods accept context (e.g., product ID) instead of raw messages
-5. **Exception Hierarchy**: All catalog exceptions inherit from `CatalogException`, which inherits from `Exception`
-6. **Exception Handling**: Global middleware catches `CatalogException` and uses its `StatusCode` and `Title` properties for HTTP responses
-7. **Flow**: Request → Handler → Factory → ExceptionMessages (returns ExceptionInfo) → Exception → Global Handler → HTTP Response
-8. **Simplified Structure**: `ExceptionInfo` record reduces boilerplate by bundling message, status code, and title together
+5. **Exception Hierarchy**: All catalog exceptions inherit from `CatalogException`, which inherits from `BaseException` (BuildingBlocks), which inherits from `Exception`
+6. **Exception Handling**: Global middleware catches `BaseException` (which includes `CatalogException`) and uses its `StatusCode` and `Title` properties for HTTP responses
+7. **Microservices Architecture**: Common infrastructure (`BaseException`, `ExceptionInfo`) is in BuildingBlocks and shared across all microservices
+8. **Flow**: Request → Handler → Factory → ExceptionMessages (returns ExceptionInfo) → Exception → Global Handler → HTTP Response
+9. **Simplified Structure**: `ExceptionInfo` record reduces boilerplate by bundling message, status code, and title together
 
 ## Folder Structure
 
@@ -187,8 +194,7 @@ The Exceptions folder is organized into logical subfolders for better maintainab
 ```
 Exceptions/
 ├── Base/
-│   └── CatalogException.cs          # Base exception class with HTTP info
-├── ExceptionInfo.cs                  # Record containing message, statusCode, and title
+│   └── CatalogException.cs          # Domain-specific base exception (inherits from BuildingBlocks.BaseException)
 ├── Types/
 │   └── ProductNotFoundException.cs   # Specific exception types
 ├── Messages/
@@ -197,45 +203,72 @@ Exceptions/
 │   ├── IExceptionFactory.cs         # Factory interface
 │   └── ExceptionFactory.cs          # Factory implementation
 └── README.md                         # Documentation
+
+BuildingBlocks/BuildingBlocks/Exceptions/
+├── BaseException.cs                  # Common base exception for all microservices
+└── ExceptionInfo.cs                  # Record containing message, statusCode, and title (shared)
 ```
 
 ### Folder Organization
 
-- **`Base/`**: Contains the base exception class (`CatalogException`) with HTTP response information
-- **`ExceptionInfo.cs`**: Record containing message, status code, and title for exceptions
+**Catalog.API/Exceptions/** (Domain-Specific):
+
+- **`Base/`**: Contains the domain-specific base exception class (`CatalogException`) that inherits from `BuildingBlocks.BaseException`
 - **`Types/`**: Contains specific exception types (e.g., `ProductNotFoundException`)
 - **`Messages/`**: Contains centralized exception definitions that return `ExceptionInfo` (message, status code, and title)
 - **`Factory/`**: Contains the factory interface and implementation
 
+**BuildingBlocks/BuildingBlocks/Exceptions/** (Shared Infrastructure):
+
+- **`BaseException.cs`**: Common base exception class for all microservices (contains HTTP response information)
+- **`ExceptionInfo.cs`**: Record containing message, status code, and title for exceptions (shared across all microservices)
+
 ## Structure
 
-### `ExceptionInfo.cs`
+### `BuildingBlocks.Exceptions.ExceptionInfo`
 
-- **Record** containing all information needed for an exception and its HTTP response
+- **Record** (located in BuildingBlocks) containing all information needed for an exception and its HTTP response
 - Contains: `Message`, `StatusCode`, and `Title`
 - Used by `ExceptionMessages` to return complete exception information
 - Simplifies exception creation by bundling all related data together
+- **Shared across all microservices** for consistency
 
-### `Base/CatalogException.cs`
+### `BuildingBlocks.Exceptions.BaseException`
 
-- **Base class** for all catalog-related exceptions
-- Located in `Base/` folder for base exception types
+- **Base class** (located in BuildingBlocks) for all microservice exceptions
 - Inherits from `Exception`
 - Contains `StatusCode` and `Title` properties for HTTP responses
 - Takes `ExceptionInfo` in constructors to initialize all properties
-- Can be used directly or inherited by specific exception types
+- **Shared across all microservices** for consistent exception handling
+
+### `Base/CatalogException.cs`
+
+- **Domain-specific base class** for all catalog-related exceptions
+- Located in `Base/` folder for domain-specific base exception types
+- Inherits from `BuildingBlocks.Exceptions.BaseException`
+- Provides a domain-specific layer for Catalog API exceptions
+- All Catalog API exceptions should inherit from this class
+- Takes `ExceptionInfo` in constructors and passes to base class
 
 #### Why Do We Need CatalogException?
 
-Having a base `CatalogException` class provides several important benefits:
+Having a domain-specific `CatalogException` class (in addition to `BuildingBlocks.BaseException`) provides several important benefits:
 
-1. **Centralized Exception Handling**: You can catch all catalog-related exceptions at once in global exception handlers:
+1. **Domain-Specific Exception Handling**: You can catch all catalog-related exceptions at once in domain-specific handlers if needed:
 
    ```csharp
    catch (CatalogException ex)
    {
        // Handle all catalog business exceptions (ProductNotFound, ProductAlreadyExists, etc.)
        // Uses the StatusCode and Title from the exception itself
+       return Results.Problem(
+           detail: ex.Message,
+           statusCode: ex.StatusCode,
+           title: ex.Title);
+   }
+   catch (BaseException ex)
+   {
+       // Handle other microservice exceptions
        return Results.Problem(
            detail: ex.Message,
            statusCode: ex.StatusCode,
@@ -248,16 +281,19 @@ Having a base `CatalogException` class provides several important benefits:
    }
    ```
 
-2. **Separation of Concerns**: Distinguishes between:
+   **Note**: The global middleware catches `BaseException`, which includes `CatalogException` since it inherits from it.
 
-   - **Business/Validation Exceptions** (CatalogException) → Return appropriate status codes (404, 400, etc.) defined in ExceptionMessages
+2. **Separation of Concerns**: Provides a clear hierarchy:
+
+   - **Domain Exceptions** (CatalogException) → Catalog API specific business exceptions
+   - **Common Exceptions** (BaseException) → Shared across all microservices
    - **System/Technical Exceptions** (Exception) → Return 500 Internal Server Error
 
-3. **Consistent Structure**: All catalog exceptions share the same base structure and can be extended with common properties if needed in the future (e.g., ErrorCode, Timestamp)
+3. **Domain Identification**: Makes it immediately clear which exceptions originate from the Catalog API domain vs other services
 
-4. **API Identification**: Makes it immediately clear which exceptions originate from the Catalog API domain vs other services or system exceptions
+4. **Future Extensibility**: Allows you to add Catalog-specific behavior to all catalog exceptions later (domain-specific error codes, catalog-specific logging, etc.) without modifying the shared `BaseException` class
 
-5. **Future Extensibility**: Allows you to add common behavior to all catalog exceptions later (logging, error codes, etc.) without modifying each individual exception class
+5. **Microservices Architecture**: Keeps domain-specific logic in the service while sharing common infrastructure through BuildingBlocks
 
 ## Class Diagram
 
@@ -274,14 +310,21 @@ classDiagram
 
     class ExceptionInfo {
         <<record>>
+        <<BuildingBlocks>>
         +string Message
         +int StatusCode
         +string Title
     }
 
-    class CatalogException {
+    class BaseException {
+        <<BuildingBlocks>>
         +int StatusCode
         +string Title
+        +BaseException(ExceptionInfo info)
+        +BaseException(ExceptionInfo info, Exception innerException)
+    }
+
+    class CatalogException {
         +CatalogException(ExceptionInfo info)
         +CatalogException(ExceptionInfo info, Exception innerException)
     }
@@ -306,7 +349,8 @@ classDiagram
         +ProductNotFoundException CreateProductNotFoundException(Guid productId)
     }
 
-    Exception <|-- CatalogException : inherits
+    Exception <|-- BaseException : "BuildingBlocks"
+    BaseException <|-- CatalogException : "Domain-specific"
     CatalogException <|-- ProductNotFoundException : inherits
     IExceptionFactory <|.. ExceptionFactory : implements
     ExceptionFactory ..> ExceptionMessages : uses
@@ -316,8 +360,9 @@ classDiagram
 ### Diagram Explanation
 
 - **Exception**: Base .NET Framework class (shown for context)
-- **ExceptionInfo**: Record containing message, status code, and title for exceptions
-- **CatalogException**: Base class for all catalog domain exceptions with HTTP response information
+- **BaseException**: Common base exception class in BuildingBlocks, shared across all microservices
+- **ExceptionInfo**: Record (in BuildingBlocks) containing message, status code, and title for exceptions
+- **CatalogException**: Domain-specific base class for all catalog domain exceptions (inherits from `BaseException`)
 - **ProductNotFoundException**: Concrete exception class for product not found scenarios
 - **ExceptionMessages**: Static class returning `ExceptionInfo` with complete exception data
 - **IExceptionFactory**: Interface defining the contract for exception creation
@@ -325,7 +370,7 @@ classDiagram
 
 The diagram shows:
 
-- **Inheritance**: `Exception` → `CatalogException` → `ProductNotFoundException`
+- **Inheritance**: `Exception` → `BaseException` (BuildingBlocks) → `CatalogException` (Domain) → `ProductNotFoundException`
 - **Implementation**: `ExceptionFactory` implements `IExceptionFactory`
 - **Data Flow**: `ExceptionMessages` returns `ExceptionInfo` → `ExceptionFactory` uses it → Creates exceptions
 - **Dependency**: `ExceptionFactory` creates instances using `ExceptionInfo` from `ExceptionMessages`

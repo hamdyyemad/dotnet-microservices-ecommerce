@@ -1,25 +1,21 @@
+using BuildingBlocks.Exceptions;
+
 namespace Catalog.API.Exceptions;
 
 /// <summary>
 /// Base exception class for all catalog-related exceptions.
-/// Contains HTTP response information (status code and title) along with the error message.
+/// Inherits from BuildingBlocks.BaseException to provide domain-specific exception handling.
+/// All Catalog API domain exceptions should inherit from this class.
 /// </summary>
-public class CatalogException : Exception
+public abstract class CatalogException : BaseException
 {
-    public int StatusCode { get; }
-    public string Title { get; }
-
-    public CatalogException(ExceptionInfo info) : base(info.Message)
+    protected CatalogException(ExceptionInfo info) : base(info)
     {
-        StatusCode = info.StatusCode;
-        Title = info.Title;
     }
 
-    public CatalogException(ExceptionInfo info, Exception innerException) 
-        : base(info.Message, innerException)
+    protected CatalogException(ExceptionInfo info, Exception innerException) 
+        : base(info, innerException)
     {
-        StatusCode = info.StatusCode;
-        Title = info.Title;
     }
 }
 

@@ -1,4 +1,4 @@
-using Catalog.API.Exceptions;
+using BuildingBlocks.Exceptions;
 
 namespace Catalog.API.Middleware;
 
@@ -37,18 +37,18 @@ public class GlobalExceptionHandlerMiddleware
 
         var problemDetails = exception switch
         {
-            CatalogException catalogException => new
+            BaseException baseException => new
             {
-                status = catalogException.StatusCode,
-                title = catalogException.Title,
-                details = catalogException.Message,
-                type = catalogException.GetType().Name
+                status = baseException.StatusCode,
+                title = baseException.Title,
+                detail = baseException.Message,
+                type = baseException.GetType().Name
             },
             _ => new
             {
                 status = StatusCodes.Status500InternalServerError,
                 title = "Internal Server Error",
-                details = _environment.IsDevelopment() 
+                detail = _environment.IsDevelopment() 
                     ? exception.Message 
                     : "An error occurred while processing your request.",
                 type = exception.GetType().Name

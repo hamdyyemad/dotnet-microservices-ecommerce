@@ -73,8 +73,8 @@ public class CatalogRoutes : ICarterModule
             .WithName("HealthCheck")
             .WithSummary("Health check endpoint");
 
-        RegisterProductQueries(v1Group, version);
-        RegisterProductCommands(v1Group, version);
+        RegisterV1ProductQueries(v1Group);
+        RegisterV1ProductCommands(v1Group);
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public class CatalogRoutes : ICarterModule
     //     // Add any new V2-specific endpoints here
     // }
 
-    private static void RegisterProductQueries(RouteGroupBuilder group, string version)
+    private static void RegisterV1ProductQueries(RouteGroupBuilder group)
     {
         // GET /api/v{version}/products
         new GetProductsEndpoint().AddRoutes(group, GetProductsPath);
@@ -105,7 +105,7 @@ public class CatalogRoutes : ICarterModule
         new GetProductsByCategoryEndpoint().AddRoutes(group, GetProductsByCategoryPath);
     }
 
-    private static void RegisterProductCommands(RouteGroupBuilder group, string version)
+    private static void RegisterV1ProductCommands(RouteGroupBuilder group)
     {
         // POST /api/v{version}/products
         new CreateProductEndpoint().AddRoutes(group, CreateProductPath);

@@ -37,12 +37,21 @@ public class GlobalExceptionHandlerMiddleware
 
         var problemDetails = exception switch
         {
+            ValidationException validationException => new
+            {
+                status = validationException.StatusCode,
+                title = validationException.Title,
+                detail = validationException.Message,
+                type = validationException.GetType().Name,
+                errors = validationException.Errors
+            },
             BaseException baseException => new
             {
                 status = baseException.StatusCode,
                 title = baseException.Title,
                 detail = baseException.Message,
-                type = baseException.GetType().Name
+                type = baseException.GetType().Name,
+                errors = (Dictionary<string, string[]>?)null
             },
             _ => new
             {
@@ -51,7 +60,8 @@ public class GlobalExceptionHandlerMiddleware
                 detail = _environment.IsDevelopment() 
                     ? exception.Message 
                     : "An error occurred while processing your request.",
-                type = exception.GetType().Name
+                type = exception.GetType().Name,
+                errors = (Dictionary<string, string[]>?)null
             }
         };
 
